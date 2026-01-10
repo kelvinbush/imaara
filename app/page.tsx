@@ -1,166 +1,151 @@
 "use client";
 
-import {
-  Authenticated,
-  Unauthenticated,
-  useMutation,
-  useQuery,
-} from "convex/react";
-import { api } from "../convex/_generated/api";
 import Link from "next/link";
-import { SignUpButton } from "@clerk/nextjs";
-import { SignInButton } from "@clerk/nextjs";
-import { UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { useMemo } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import QuickAddMember from "@/components/QuickAddMember";
+
+function toISODate(d: Date) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export default function Home() {
-  return (
-    <>
-      <header className="sticky top-0 z-10 bg-background p-4 border-b-2 border-slate-200 dark:border-slate-800 flex flex-row justify-between items-center">
-        Convex + Next.js + Clerk
-        <UserButton />
-      </header>
-      <main className="p-8 flex flex-col gap-8">
-        <h1 className="text-4xl font-bold text-center">
-          Convex + Next.js + Clerk
-        </h1>
-        <Authenticated>
-          <Content />
-        </Authenticated>
-        <Unauthenticated>
-          <SignInForm />
-        </Unauthenticated>
-      </main>
-    </>
+  const todayIso = toISODate(new Date());
+  const roster = useQuery(api.attendance.rosterForDate, { date: todayIso });
+  const recent = useQuery(api.attendance.recentActivity, { limit: 10 });
+
+  const members = roster ?? [];
+  const present = useMemo(
+    () => members.filter((m) => m.presentToday).length,
+    [members]
   );
-}
-
-function SignInForm() {
-  return (
-    <div className="flex flex-col gap-8 w-96 mx-auto">
-      <p>Log in to see the numbers</p>
-      <SignInButton mode="modal">
-        <button className="bg-foreground text-background px-4 py-2 rounded-md">
-          Sign in
-        </button>
-      </SignInButton>
-      <SignUpButton mode="modal">
-        <button className="bg-foreground text-background px-4 py-2 rounded-md">
-          Sign up
-        </button>
-      </SignUpButton>
-    </div>
-  );
-}
-
-function Content() {
-  const { viewer, numbers } =
-    useQuery(api.myFunctions.listNumbers, {
-      count: 10,
-    }) ?? {};
-  const addNumber = useMutation(api.myFunctions.addNumber);
-
-  if (viewer === undefined || numbers === undefined) {
-    return (
-      <div className="mx-auto">
-        <p>loading... (consider a loading skeleton)</p>
-      </div>
-    );
-  }
+  const total = members.length;
+  const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+  const absent = Math.max(total - present, 0);
 
   return (
-    <div className="flex flex-col gap-8 max-w-lg mx-auto">
-      <p>Welcome {viewer ?? "Anonymous"}!</p>
-      <p>
-        Click the button below and open this page in another window - this data
-        is persisted in the Convex cloud database!
-      </p>
-      <p>
-        <button
-          className="bg-foreground text-background text-sm px-4 py-2 rounded-md"
-          onClick={() => {
-            void addNumber({ value: Math.floor(Math.random() * 10) });
-          }}
-        >
-          Add a random number
-        </button>
-      </p>
-      <p>
-        Numbers:{" "}
-        {numbers?.length === 0
-          ? "Click the button!"
-          : (numbers?.join(", ") ?? "...")}
-      </p>
-      <p>
-        Edit{" "}
-        <code className="text-sm font-bold font-mono bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded-md">
-          convex/myFunctions.ts
-        </code>{" "}
-        to change your backend
-      </p>
-      <p>
-        Edit{" "}
-        <code className="text-sm font-bold font-mono bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded-md">
-          app/page.tsx
-        </code>{" "}
-        to change your frontend
-      </p>
-      <p>
-        See the{" "}
-        <Link href="/server" className="underline hover:no-underline">
-          /server route
-        </Link>{" "}
-        for an example of loading data in a server component
-      </p>
-      <div className="flex flex-col">
-        <p className="text-lg font-bold">Useful resources:</p>
-        <div className="flex gap-2">
-          <div className="flex flex-col gap-2 w-1/2">
-            <ResourceCard
-              title="Convex docs"
-              description="Read comprehensive documentation for all Convex features."
-              href="https://docs.convex.dev/home"
-            />
-            <ResourceCard
-              title="Stack articles"
-              description="Learn about best practices, use cases, and more from a growing
-            collection of articles, videos, and walkthroughs."
-              href="https://www.typescriptlang.org/docs/handbook/2/basic-types.html"
-            />
+    <div
+      className="min-h-screen text-foreground font-light bg-gradient-to-br from-amber-50 via-[#F4F1EB] to-zinc-50"
+      style={{
+        backgroundImage:
+          "linear-gradient(0deg, rgba(48,48,48,0.08), rgba(48,48,48,0.08)), linear-gradient(135deg, #FFF7E6 0%, #F4F1EB 50%, #F7F7F7 100%)",
+      }}
+    >
+      <div className="backdrop-blur-xl sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div>
+            <div className="text-zinc-900 font-light tracking-tight text-xl">Dashboard</div>
+            <div className="text-xs text-zinc-600">Quick overview and actions</div>
           </div>
-          <div className="flex flex-col gap-2 w-1/2">
-            <ResourceCard
-              title="Templates"
-              description="Browse our collection of templates to get started quickly."
-              href="https://www.convex.dev/templates"
-            />
-            <ResourceCard
-              title="Discord"
-              description="Join our developer community to ask questions, trade tips & tricks,
-            and show off your projects."
-              href="https://www.convex.dev/community"
-            />
+          <div className="flex items-center gap-3">
+            <Link
+              href="/attendance"
+              className="hidden md:inline-flex px-3 py-1.5 rounded-full bg-zinc-900/90 text-white hover:bg-zinc-900 text-sm"
+            >
+              Mark Attendance
+            </Link>
+            <Link
+              href="/members/import"
+              className="hidden md:inline-flex px-3 py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-sm"
+            >
+              Import CSV
+            </Link>
+            <UserButton />
           </div>
         </div>
       </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <SignedOut>
+          <div className="max-w-3xl mx-auto">
+            <div className="rounded-2xl p-8 bg-white/60 backdrop-blur-xl text-center">
+              <p className="mb-4 text-zinc-700">Please sign in to access the dashboard.</p>
+              <SignInButton mode="modal">
+                <button className="px-4 py-2 rounded-full bg-zinc-900 text-white">Sign in</button>
+              </SignInButton>
+            </div>
+          </div>
+        </SignedOut>
+
+        <SignedIn>
+          {/* Highlights */}
+          <div className="rounded-2xl p-4 md:p-5 bg-zinc-900/90 text-white">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2 text-xs md:text-sm">
+                <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">{new Date().toLocaleDateString()}</span>
+                <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">Members: {total}</span>
+                <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">Present Today: {present}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link href="/attendance" className="px-3 py-1.5 rounded-full bg-amber-300 text-zinc-900 text-sm">
+                  Open Attendance
+                </Link>
+                <QuickAddMember dateIso={todayIso} />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex items-center gap-8">
+                <Stat label="Today" value={`${present} / ${total}`} />
+                <Stat label="Absent" value={`${absent}`} />
+              </div>
+              <div className="flex-1 max-w-xl">
+                <div className="text-sm mb-1">ATTENDANCE RATE</div>
+                <div className="h-1.5 rounded-full bg-white/20 overflow-hidden">
+                  <div className="h-full bg-emerald-400" style={{ width: `${rate}%` }} />
+                </div>
+                <div className="text-xs mt-1">{rate}%</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick actions */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/attendance" className="px-3 py-1.5 rounded-full bg-zinc-900/90 text-white hover:bg-zinc-900 text-sm">
+              Mark Attendance
+            </Link>
+            <Link href="/members/import" className="px-3 py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-sm">
+              Import Members
+            </Link>
+          </div>
+
+          {/* Recent activity */}
+          <div className="rounded-2xl p-4 bg-white/60 backdrop-blur-xl">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-zinc-900 font-medium">Recent activity</div>
+              <Link href="/attendance" className="text-sm text-zinc-600 hover:text-zinc-900">View →</Link>
+            </div>
+            <ul className="divide-y divide-white/60">
+              {(recent ?? []).map((a) => (
+                <li key={a._id as any} className="py-2 text-sm flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${a.present ? "bg-emerald-500" : "bg-rose-500"}`} />
+                    <span className="text-zinc-900">{a.memberName}</span>
+                  </div>
+                  <div className="text-zinc-600">{a.present ? "Present" : "Absent"} • {a.date}</div>
+                </li>
+              ))}
+              {(recent ?? []).length === 0 && (
+                <li className="py-4 text-sm text-zinc-600">No activity yet.</li>
+              )}
+            </ul>
+          </div>
+        </SignedIn>
+      </div>
     </div>
   );
 }
 
-function ResourceCard({
-  title,
-  description,
-  href,
-}: {
-  title: string;
-  description: string;
-  href: string;
-}) {
+function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-2 bg-slate-200 dark:bg-slate-800 p-4 rounded-md h-28 overflow-auto">
-      <a href={href} className="text-sm underline hover:no-underline">
-        {title}
-      </a>
-      <p className="text-xs">{description}</p>
+    <div className="flex flex-col">
+      <span className="text-xs text-white/70">{label}</span>
+      <span className="text-xl font-medium">{value}</span>
     </div>
   );
 }

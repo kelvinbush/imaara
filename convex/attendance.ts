@@ -157,3 +157,29 @@ export const rosterForDate = query({
     return withLast;
   },
 });
+
+export const recentActivity = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const limit = Math.max(1, Math.min(50, args.limit ?? 10));
+    const records = await ctx.db.query("attendance").order("desc").take(limit);
+
+    const result = await Promise.all(
+      records.map(async (r) => {
+        const m = await ctx.db.get(r.memberId);
+        return {
+          _id: r._id,
+          date: r.date,
+          present: r.present,
+          memberId: r.memberId,
+          memberName: m?.name ?? "Unknown",
+          createdAt: r._creationTime,
+        };
+      })
+    );
+    return result;
+  },
+});
