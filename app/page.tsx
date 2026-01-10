@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { useMemo } from "react";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import QuickAddMember from "@/components/QuickAddMember";
 
@@ -15,9 +15,16 @@ function toISODate(d: Date) {
 }
 
 export default function Home() {
+  const { isAuthenticated } = useConvexAuth();
   const todayIso = toISODate(new Date());
-  const roster = useQuery(api.attendance.rosterForDate, { date: todayIso });
-  const recent = useQuery(api.attendance.recentActivity, { limit: 10 });
+  const roster = useQuery(
+    api.attendance.rosterForDate,
+    isAuthenticated ? { date: todayIso } : "skip"
+  );
+  const recent = useQuery(
+    api.attendance.recentActivity,
+    isAuthenticated ? { limit: 10 } : "skip"
+  );
 
   const members = roster ?? [];
   const present = useMemo(
@@ -37,25 +44,34 @@ export default function Home() {
       }}
     >
       <div className="backdrop-blur-xl sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <div className="text-zinc-900 font-light tracking-tight text-xl">Dashboard</div>
             <div className="text-xs text-zinc-600">Quick overview and actions</div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/attendance"
-              className="hidden md:inline-flex px-3 py-1.5 rounded-full bg-zinc-900/90 text-white hover:bg-zinc-900 text-sm"
+              className="inline-flex px-3 py-1.5 rounded-full bg-zinc-900/90 text-white hover:bg-zinc-900 text-xs sm:text-sm"
             >
               Mark Attendance
             </Link>
             <Link
               href="/members/import"
-              className="hidden md:inline-flex px-3 py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-sm"
+              className="inline-flex px-3 py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-xs sm:text-sm"
             >
               Import CSV
             </Link>
-            <UserButton />
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="px-3 py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-xs sm:text-sm">
+                  Sign in
+                </button>
+              </SignInButton>
+            </SignedOut>
           </div>
         </div>
       </div>
@@ -75,21 +91,26 @@ export default function Home() {
         <SignedIn>
           {/* Highlights */}
           <div className="rounded-2xl p-4 md:p-5 bg-zinc-900/90 text-white">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div className="flex items-center gap-2 text-xs md:text-sm">
-                <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">{new Date().toLocaleDateString()}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm">
+                <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">
+                  {new Date().toLocaleDateString()}
+                </span>
                 <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">Members: {total}</span>
                 <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">Present Today: {present}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Link href="/attendance" className="px-3 py-1.5 rounded-full bg-amber-300 text-zinc-900 text-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                <Link
+                  href="/attendance"
+                  className="px-3 py-2 sm:py-1.5 rounded-full bg-amber-300 text-zinc-900 text-sm text-center"
+                >
                   Open Attendance
                 </Link>
                 <QuickAddMember dateIso={todayIso} />
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
               <div className="flex items-center gap-8">
                 <Stat label="Today" value={`${present} / ${total}`} />
                 <Stat label="Absent" value={`${absent}`} />
@@ -106,10 +127,10 @@ export default function Home() {
 
           {/* Quick actions */}
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/attendance" className="px-3 py-1.5 rounded-full bg-zinc-900/90 text-white hover:bg-zinc-900 text-sm">
+            <Link href="/attendance" className="px-3 py-2 sm:py-1.5 rounded-full bg-zinc-900/90 text-white hover:bg-zinc-900 text-sm">
               Mark Attendance
             </Link>
-            <Link href="/members/import" className="px-3 py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-sm">
+            <Link href="/members/import" className="px-3 py-2 sm:py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-sm">
               Import Members
             </Link>
           </div>
@@ -122,12 +143,17 @@ export default function Home() {
             </div>
             <ul className="divide-y divide-white/60">
               {(recent ?? []).map((a) => (
-                <li key={a._id as any} className="py-2 text-sm flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <li
+                  key={a._id as any}
+                  className="py-2 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
                     <span className={`h-2 w-2 rounded-full ${a.present ? "bg-emerald-500" : "bg-rose-500"}`} />
-                    <span className="text-zinc-900">{a.memberName}</span>
+                    <span className="text-zinc-900 truncate">{a.memberName}</span>
                   </div>
-                  <div className="text-zinc-600">{a.present ? "Present" : "Absent"} • {a.date}</div>
+                  <div className="text-zinc-600">
+                    {a.present ? "Present" : "Absent"} • {a.date}
+                  </div>
                 </li>
               ))}
               {(recent ?? []).length === 0 && (
