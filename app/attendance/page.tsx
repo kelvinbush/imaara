@@ -6,6 +6,7 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import QuickAddMember from "@/components/QuickAddMember";
 import MemberEditor, { MemberSummary } from "@/components/MemberEditor";
+import { formatDate, formatIsoDate } from "@/lib/date";
 
 function toISODate(d: Date) {
   const year = d.getFullYear();
@@ -113,7 +114,7 @@ export default function AttendancePage() {
         <div className="max-w-7xl mx-auto px-4 py-4 space-y-6">
           {/* Highlights */}
           <HighlightsPanel
-            dateStr={new Date().toLocaleDateString()}
+            dateStr={formatDate(new Date())}
             dateIso={todayIso}
             total={members.length}
             present={presentTodayCount}
@@ -221,7 +222,7 @@ export default function AttendancePage() {
                               >
                                 {m.lastAttendance.present ? "Present" : "Absent"}
                               </span>
-                              <span className="text-zinc-500">{m.lastAttendance.date}</span>
+                              <span className="text-zinc-500">{formatIsoDate(m.lastAttendance.date)}</span>
                             </span>
                           ) : (
                             <span className="italic text-zinc-500">No records</span>
@@ -304,7 +305,7 @@ export default function AttendancePage() {
                                 <span className={m.lastAttendance.present ? "text-emerald-700" : "text-rose-700"}>
                                   {m.lastAttendance.present ? "Present" : "Absent"}
                                 </span>
-                                <span className="text-zinc-500">{m.lastAttendance.date}</span>
+                                <span className="text-zinc-500">{formatIsoDate(m.lastAttendance.date)}</span>
                               </span>
                             ) : (
                               <span className="italic text-zinc-500">No records</span>

@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import QuickAddMember from "@/components/QuickAddMember";
+import { formatDate, formatIsoDate } from "@/lib/date";
 
 function toISODate(d: Date) {
   const year = d.getFullYear();
@@ -57,6 +58,12 @@ export default function Home() {
               Mark Attendance
             </Link>
             <Link
+              href="/attendance/history"
+              className="inline-flex px-3 py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-xs sm:text-sm"
+            >
+              History
+            </Link>
+            <Link
               href="/members/import"
               className="inline-flex px-3 py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-xs sm:text-sm"
             >
@@ -94,7 +101,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm">
                 <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">
-                  {new Date().toLocaleDateString()}
+                  {formatDate(new Date())}
                 </span>
                 <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">Members: {total}</span>
                 <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">Present Today: {present}</span>
@@ -130,6 +137,9 @@ export default function Home() {
             <Link href="/attendance" className="px-3 py-2 sm:py-1.5 rounded-full bg-zinc-900/90 text-white hover:bg-zinc-900 text-sm">
               Mark Attendance
             </Link>
+            <Link href="/attendance/history" className="px-3 py-2 sm:py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-sm">
+              Attendance History
+            </Link>
             <Link href="/members/import" className="px-3 py-2 sm:py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-sm">
               Import Members
             </Link>
@@ -152,7 +162,7 @@ export default function Home() {
                     <span className="text-zinc-900 truncate">{a.memberName}</span>
                   </div>
                   <div className="text-zinc-600">
-                    {a.present ? "Present" : "Absent"} • {a.date}
+                    {a.present ? "Present" : "Absent"} • {formatIsoDate(a.date)}
                   </div>
                 </li>
               ))}

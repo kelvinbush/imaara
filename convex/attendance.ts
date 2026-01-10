@@ -183,3 +183,41 @@ export const recentActivity = query({
     return result;
   },
 });
+
+export const recentRollCalls = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const limit = Math.max(1, Math.min(60, args.limit ?? 20));
+
+    // Convex doesn't provide a native group-by; we build a small list of unique
+    // dates from recent attendance rows, then compute per-date counts.
+    const seed = await ctx.db.query("attendance").order("desc").take(2000);
+    const uniqueDates: string[] = [];
+    const seen = new Set<string>();
+    for (const r of seed) {
+      if (seen.has(r.date)) continue;
+      seen.add(r.date);
+      uniqueDates.push(r.date);
+      if (uniqueDates.length >= limit) break;
+    }
+
+    const summaries = await Promise.all(
+      uniqueDates.map(async (date) => {
+        const rows = await ctx.db
+          .query("attendance")
+          .withIndex("by_date", (q) => q.eq("date", date))
+          .collect();
+        const total = rows.length;
+        const present = rows.filter((r) => r.present).length;
+        return { date, total, present, absent: Math.max(0, total - present) };
+      })
+    );
+
+    // ISO date strings sort lexicographically.
+    summaries.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    return summaries;
+  },
+});
