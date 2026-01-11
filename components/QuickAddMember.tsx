@@ -78,7 +78,7 @@ export default function QuickAddMember({ dateIso, onDone }: Props) {
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300"
                     placeholder="Full name"
                   />
                 </Field>
@@ -86,7 +86,7 @@ export default function QuickAddMember({ dateIso, onDone }: Props) {
                   <input
                     value={contact}
                     onChange={(e) => setContact(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300"
                     placeholder="07..."
                   />
                 </Field>
@@ -94,7 +94,7 @@ export default function QuickAddMember({ dateIso, onDone }: Props) {
                   <input
                     value={residence}
                     onChange={(e) => setResidence(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300"
                     placeholder="Location"
                   />
                 </Field>
@@ -102,7 +102,7 @@ export default function QuickAddMember({ dateIso, onDone }: Props) {
                   <select
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-sm outline-none focus:ring-2 focus:ring-amber-300"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 text-sm outline-none focus:ring-2 focus:ring-amber-300"
                   >
                     <option value="">Unknown</option>
                     <option value="male">Male</option>
@@ -113,7 +113,7 @@ export default function QuickAddMember({ dateIso, onDone }: Props) {
                   <input
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300"
                     placeholder="e.g. Usher"
                   />
                 </Field>
@@ -121,7 +121,7 @@ export default function QuickAddMember({ dateIso, onDone }: Props) {
                   <input
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300"
                     placeholder="e.g. Youth/Married"
                   />
                 </Field>
