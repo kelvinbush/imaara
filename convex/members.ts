@@ -1,6 +1,19 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
+function isAdminIdentity(identity: any): boolean {
+  const role =
+    identity?.publicMetadata?.role ??
+    identity?.public_metadata?.role ??
+    identity?.claims?.role ??
+    identity?.claims?.publicMetadata?.role ??
+    identity?.claims?.public_metadata?.role ??
+    identity?.customClaims?.role ??
+    identity?.customClaims?.publicMetadata?.role ??
+    identity?.customClaims?.public_metadata?.role;
+  return role === "admin";
+}
+
 export const list = query({
   args: {
     active: v.optional(v.boolean()),
@@ -148,8 +161,20 @@ export const remove = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
 
+    if (!isAdminIdentity(identity as any)) {
+      throw new Error("Forbidden");
+    }
+
     const member = await ctx.db.get(args.memberId);
     if (!member) throw new Error("Member not found");
+
+    const attendanceRows = await ctx.db
+      .query("attendance")
+      .withIndex("by_member_date", (q) => q.eq("memberId", args.memberId))
+      .collect();
+    for (const row of attendanceRows) {
+      await ctx.db.delete(row._id);
+    }
 
     await ctx.db.delete(args.memberId);
   },

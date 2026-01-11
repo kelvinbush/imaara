@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { createPortal } from "react-dom";
+import { useUser } from "@clerk/nextjs";
 
 export type MemberSummary = {
   memberId: string; // Convex Id serialized
@@ -23,6 +24,7 @@ type Props = {
 };
 
 export default function MemberEditor({ open, onClose, member, onSaved }: Props) {
+  const { user } = useUser();
   const [name, setName] = useState(member.name);
   const [contact, setContact] = useState(member.contact ?? "");
   const [residence, setResidence] = useState(member.residence ?? "");
@@ -33,6 +35,9 @@ export default function MemberEditor({ open, onClose, member, onSaved }: Props) 
   const [error, setError] = useState<string | null>(null);
 
   const updateMember = useMutation(api.members.update);
+  const removeMember = useMutation(api.members.remove);
+
+  const isAdmin = (user?.publicMetadata as any)?.role === "admin";
 
   useEffect(() => {
     if (!open) return;
@@ -115,6 +120,31 @@ export default function MemberEditor({ open, onClose, member, onSaved }: Props) 
           {error && <div className="text-sm text-rose-600">{error}</div>}
 
           <div className="flex justify-end gap-2 mt-2">
+            {isAdmin && (
+              <button
+                type="button"
+                disabled={loading}
+                className="mr-auto px-3 py-1.5 rounded-full bg-rose-600 text-white disabled:opacity-50"
+                onClick={async () => {
+                  const ok = window.confirm(
+                    `Delete ${name || "this member"}? This cannot be undone.`
+                  );
+                  if (!ok) return;
+                  setLoading(true);
+                  try {
+                    await removeMember({ memberId: member.memberId as any } as any);
+                    onSaved?.();
+                    onClose();
+                  } catch (e: any) {
+                    setError(e?.message ?? "Failed to delete member.");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                Delete
+              </button>
+            )}
             <button type="button" className="px-3 py-1.5 rounded-full bg-zinc-200 text-zinc-900" onClick={onClose}>
               Cancel
             </button>
