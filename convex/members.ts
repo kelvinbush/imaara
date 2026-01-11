@@ -2,7 +2,11 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
 function isAdminIdentity(identity: any): boolean {
-  const role =
+  return getRoleFromIdentity(identity) === "admin";
+}
+
+function getRoleFromIdentity(identity: any): string | undefined {
+  return (
     identity?.publicMetadata?.role ??
     identity?.public_metadata?.role ??
     identity?.claims?.role ??
@@ -10,8 +14,8 @@ function isAdminIdentity(identity: any): boolean {
     identity?.claims?.public_metadata?.role ??
     identity?.customClaims?.role ??
     identity?.customClaims?.publicMetadata?.role ??
-    identity?.customClaims?.public_metadata?.role;
-  return role === "admin";
+    identity?.customClaims?.public_metadata?.role
+  );
 }
 
 export const list = query({
@@ -162,7 +166,8 @@ export const remove = mutation({
     if (!identity) throw new Error("Unauthorized");
 
     if (!isAdminIdentity(identity as any)) {
-      throw new Error("Forbidden");
+      const role = getRoleFromIdentity(identity as any);
+      throw new Error(`Forbidden (role=${role ?? "undefined"}). Configure Clerk JWT template 'convex' to include role.`);
     }
 
     const member = await ctx.db.get(args.memberId);
