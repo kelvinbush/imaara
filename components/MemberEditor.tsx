@@ -90,26 +90,26 @@ export default function MemberEditor({ open, onClose, member, onSaved }: Props) 
         }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Field label="Name" required>
-              <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
+              <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
             </Field>
             <Field label="Phone">
-              <input value={contact} onChange={(e) => setContact(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
+              <input value={contact} onChange={(e) => setContact(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
             </Field>
             <Field label="Residence">
-              <input value={residence} onChange={(e) => setResidence(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
+              <input value={residence} onChange={(e) => setResidence(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
             </Field>
             <Field label="Gender">
-              <select value={gender} onChange={(e) => setGender(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-sm outline-none focus:ring-2 focus:ring-amber-300">
+              <select value={gender} onChange={(e) => setGender(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 text-sm outline-none focus:ring-2 focus:ring-amber-300">
                 <option value="">Unknown</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </select>
             </Field>
             <Field label="Department">
-              <input value={department} onChange={(e) => setDepartment(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
+              <input value={department} onChange={(e) => setDepartment(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
             </Field>
             <Field label="Status">
-              <input value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
+              <input value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
             </Field>
           </div>
           {error && <div className="text-sm text-rose-600">{error}</div>}
