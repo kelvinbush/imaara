@@ -149,7 +149,7 @@ export default function AttendancePage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search name, phone, residence, department, status"
-              className="w-full md:max-w-md px-4 py-2.5 rounded-full border border-zinc-200 bg-white/70 backdrop-blur text-sm outline-none focus:ring-2 focus:ring-amber-300"
+              className="w-full md:max-w-md px-4 py-2.5 rounded-full border border-zinc-200 bg-white/70 backdrop-blur text-zinc-900 placeholder:text-zinc-400 text-sm outline-none focus:ring-2 focus:ring-amber-300"
             />
             <div className="flex items-center justify-between md:justify-start gap-2 text-sm text-zinc-700">
               <span>Per page</span>
