@@ -22,6 +22,16 @@ export default function RollCallDetailPage() {
   const total = members.length;
   const absent = Math.max(0, total - present);
 
+  const presentMen = members.filter(
+    (m: any) => m.presentToday && (m.gender ?? "").toLowerCase() === "male"
+  );
+  const presentWomen = members.filter(
+    (m: any) => m.presentToday && (m.gender ?? "").toLowerCase() === "female"
+  );
+  const presentUnknown = members.filter(
+    (m: any) => m.presentToday && !["male", "female"].includes((m.gender ?? "").toLowerCase())
+  );
+
   return (
     <div
       className="min-h-screen text-foreground font-light bg-gradient-to-br from-amber-50 via-[#F4F1EB] to-zinc-50"
@@ -73,6 +83,81 @@ export default function RollCallDetailPage() {
               <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">Absent: {absent}</span>
             </div>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-2xl p-4 bg-white/60 backdrop-blur-xl">
+              <div className="text-zinc-900 font-medium mb-2">Men Present ({presentMen.length})</div>
+              {presentMen.length === 0 ? (
+                <div className="text-sm text-zinc-600">None</div>
+              ) : (
+                <ul className="divide-y divide-white/60">
+                  {presentMen.map((m: any) => (
+                    <li key={m.memberId as any} className="py-2 text-sm flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-zinc-900 truncate">{m.name}</div>
+                        <div className="text-xs text-zinc-600 truncate">
+                          {m.contact ?? "-"}
+                          {m.residence ? ` • ${m.residence}` : ""}
+                        </div>
+                      </div>
+                      <span className="shrink-0 inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-white/40 text-xs text-emerald-700">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                        Present
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="rounded-2xl p-4 bg-white/60 backdrop-blur-xl">
+              <div className="text-zinc-900 font-medium mb-2">Women Present ({presentWomen.length})</div>
+              {presentWomen.length === 0 ? (
+                <div className="text-sm text-zinc-600">None</div>
+              ) : (
+                <ul className="divide-y divide-white/60">
+                  {presentWomen.map((m: any) => (
+                    <li key={m.memberId as any} className="py-2 text-sm flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-zinc-900 truncate">{m.name}</div>
+                        <div className="text-xs text-zinc-600 truncate">
+                          {m.contact ?? "-"}
+                          {m.residence ? ` • ${m.residence}` : ""}
+                        </div>
+                      </div>
+                      <span className="shrink-0 inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-white/40 text-xs text-emerald-700">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                        Present
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {presentUnknown.length > 0 && (
+            <div className="rounded-2xl p-4 bg-white/60 backdrop-blur-xl">
+              <div className="text-zinc-900 font-medium mb-2">Present (Unknown gender) ({presentUnknown.length})</div>
+              <ul className="divide-y divide-white/60">
+                {presentUnknown.map((m: any) => (
+                  <li key={m.memberId as any} className="py-2 text-sm flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-zinc-900 truncate">{m.name}</div>
+                      <div className="text-xs text-zinc-600 truncate">
+                        {m.contact ?? "-"}
+                        {m.residence ? ` • ${m.residence}` : ""}
+                      </div>
+                    </div>
+                    <span className="shrink-0 inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-white/40 text-xs text-emerald-700">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      Present
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="rounded-2xl p-4 bg-white/60 backdrop-blur-xl">
             {members.length === 0 ? (
