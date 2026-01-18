@@ -143,6 +143,9 @@ export default function Home() {
             <Link href="/members/import" className="px-3 py-2 sm:py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-sm">
               Import Members
             </Link>
+            <Link href="/kids/import" className="px-3 py-2 sm:py-1.5 rounded-full bg-white/70 backdrop-blur border border-zinc-200 text-zinc-900 text-sm">
+              Import Kids
+            </Link>
           </div>
 
           {/* Recent activity */}
