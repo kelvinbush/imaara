@@ -1,0 +1,251 @@
+import { v } from "convex/values";
+import { query, mutation } from "./_generated/server";
+
+function isAdminIdentity(identity: any): boolean {
+  return getRoleFromIdentity(identity) === "admin";
+}
+
+function getRoleFromIdentity(identity: any): string | undefined {
+  return (
+    identity?.publicMetadata?.role ??
+    identity?.public_metadata?.role ??
+    identity?.claims?.role ??
+    identity?.claims?.publicMetadata?.role ??
+    identity?.claims?.public_metadata?.role ??
+    identity?.customClaims?.role ??
+    identity?.customClaims?.publicMetadata?.role ??
+    identity?.customClaims?.public_metadata?.role
+  );
+}
+
+export const list = query({
+  args: {
+    active: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    if (args.active === true) {
+      return await ctx.db
+        .query("kids")
+        .withIndex("by_active", (q) => q.eq("active", true))
+        .collect();
+    }
+    if (args.active === false) {
+      return await ctx.db
+        .query("kids")
+        .withIndex("by_active", (q) => q.eq("active", false))
+        .collect();
+    }
+    // No filter
+    return await ctx.db.query("kids").order("desc").collect();
+  },
+});
+
+export const quickAdd = mutation({
+  args: {
+    name: v.string(),
+    contact: v.optional(v.string()),
+    residence: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    function toNull(s: string | undefined): string | null {
+      if (s === undefined) return null;
+      const t = s.trim();
+      if (t === '' || t === '-' || t.toLowerCase() === 'n/a') return null;
+      return t;
+    }
+
+    const contact = toNull(args.contact);
+    if (contact) {
+      const dupe = await ctx.db
+        .query('kids')
+        .withIndex('by_contact', (q) => q.eq('contact', contact))
+        .first();
+      if (dupe) throw new Error('Kid with this contact already exists');
+    }
+
+    const id = await ctx.db.insert('kids', {
+      name: args.name.trim(),
+      contact,
+      residence: toNull(args.residence),
+      active: true,
+      createdBy: identity.subject,
+    });
+    return id;
+  },
+});
+
+export const add = mutation({
+  args: {
+    name: v.string(),
+    contact: v.string(),
+    residence: v.string(),
+    active: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    // Prevent duplicates by contact
+    const existing = await ctx.db
+      .query("kids")
+      .withIndex("by_contact", (q) => q.eq("contact", args.contact))
+      .first();
+    if (existing) throw new Error("Kid with this contact already exists");
+
+    const doc = {
+      name: args.name.trim(),
+      contact: args.contact.trim(),
+      residence: args.residence.trim(),
+      active: args.active ?? true,
+      createdBy: identity.subject,
+    };
+    const id = await ctx.db.insert("kids", doc);
+    return id;
+  },
+});
+
+export const update = mutation({
+  args: {
+    kidId: v.id("kids"),
+    name: v.optional(v.string()),
+    contact: v.optional(v.string()),
+    residence: v.optional(v.string()),
+    active: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const kid = await ctx.db.get(args.kidId);
+    if (!kid) throw new Error("Kid not found");
+
+    if (args.contact && args.contact !== kid.contact) {
+      const newContact = args.contact!;
+      const dupe = await ctx.db
+        .query("kids")
+        .withIndex("by_contact", (q) => q.eq("contact", newContact))
+        .first();
+      if (dupe) throw new Error("Kid with this contact already exists");
+    }
+
+    await ctx.db.patch(args.kidId, {
+      ...(args.name !== undefined ? { name: args.name } : {}),
+      ...(args.contact !== undefined ? { contact: args.contact } : {}),
+      ...(args.residence !== undefined ? { residence: args.residence } : {}),
+      ...(args.active !== undefined ? { active: args.active } : {}),
+    });
+  },
+});
+
+export const remove = mutation({
+  args: { kidId: v.id("kids") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    if (!isAdminIdentity(identity as any)) {
+      const role = getRoleFromIdentity(identity as any);
+      throw new Error(`Forbidden (role=${role ?? "undefined"}). Configure Clerk JWT template 'convex' to include role.`);
+    }
+
+    const kid = await ctx.db.get(args.kidId);
+    if (!kid) throw new Error("Kid not found");
+
+    const attendanceRows = await ctx.db
+      .query("attendance")
+      .withIndex("by_member_date", (q) => q.eq("memberId", args.kidId as any))
+      .collect();
+    for (const row of attendanceRows) {
+      await ctx.db.delete(row._id);
+    }
+
+    await ctx.db.delete(args.kidId);
+  },
+});
+
+export const bulkImport = mutation({
+  args: { csv: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const lines = args.csv
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+
+    if (lines.length === 0) return { inserted: 0, skipped: 0, errors: 0 };
+
+    // Expect header: Number,Name,Contact,Residence
+    let startIndex = 0;
+    const header = lines[0].toLowerCase();
+    if (
+      header.includes("name") &&
+      header.includes("contact") &&
+      header.includes("residence")
+    ) {
+      startIndex = 1;
+    }
+
+    let inserted = 0;
+    let skipped = 0;
+    let errors = 0;
+
+    function normalize(val: string | undefined): string | null {
+      if (!val) return null;
+      const v = val.trim();
+      if (v === '' || v === '-' || v.toLowerCase() === 'n/a') return null;
+      return v;
+    }
+
+    for (let i = startIndex; i < lines.length; i++) {
+      const row = lines[i];
+      const parts = row.split(',');
+      if (parts.length < 3) {
+        errors++;
+        continue;
+      }
+      const [_, nameRaw, contactRaw, residenceRaw] = parts;
+      const name = (nameRaw ?? '').trim();
+      if (!name) {
+        skipped++;
+        continue;
+      }
+      const contact = normalize(contactRaw);
+      const residence = normalize(residenceRaw);
+
+      try {
+        // Duplicate by contact if contact is present
+        if (contact) {
+          const existing = await ctx.db
+            .query('kids')
+            .withIndex('by_contact', (q) => q.eq('contact', contact))
+            .first();
+          if (existing) {
+            skipped++;
+            continue;
+          }
+        }
+
+        await ctx.db.insert('kids', {
+          name,
+          contact,
+          residence,
+          active: true,
+          createdBy: identity.subject,
+        });
+        inserted++;
+      } catch (e) {
+        errors++;
+      }
+    }
+
+    return { inserted, skipped, errors };
+  },
+});

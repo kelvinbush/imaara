@@ -3,7 +3,7 @@ import { query, mutation } from "./_generated/server";
 
 export const markPresent = mutation({
   args: {
-    memberId: v.id("members"),
+    memberId: v.union(v.id("members"), v.id("kids")),
     date: v.string(), // ISO date string e.g. 2026-01-10
   },
   handler: async (ctx, args) => {
@@ -36,7 +36,7 @@ export const markPresent = mutation({
 
 export const unmarkPresent = mutation({
   args: {
-    memberId: v.id("members"),
+    memberId: v.union(v.id("members"), v.id("kids")),
     date: v.string(),
   },
   handler: async (ctx, args) => {
@@ -85,17 +85,24 @@ export const statusForDate = query({
       .collect();
     const presentSet = new Set(records.filter((r) => r.present).map((r) => r.memberId));
 
-    const members = await ctx.db
-      .query("members")
-      .withIndex("by_active", (q) => q.eq("active", true))
-      .collect();
+    const [members, kids] = await Promise.all([
+      ctx.db
+        .query("members")
+        .withIndex("by_active", (q) => q.eq("active", true))
+        .collect(),
+      ctx.db
+        .query("kids")
+        .withIndex("by_active", (q) => q.eq("active", true))
+        .collect(),
+    ]);
 
-    return members.map((m) => ({ memberId: m._id, present: presentSet.has(m._id) }));
+    const all = [...members, ...kids];
+    return all.map((m) => ({ memberId: m._id, present: presentSet.has(m._id) }));
   },
 });
 
 export const historyForMember = query({
-  args: { memberId: v.id("members") },
+  args: { memberId: v.union(v.id("members"), v.id("kids")) },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
@@ -116,9 +123,13 @@ export const rosterForDate = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
 
-    const [members, todays] = await Promise.all([
+    const [members, kids, todays] = await Promise.all([
       ctx.db
         .query("members")
+        .withIndex("by_active", (q) => q.eq("active", true))
+        .collect(),
+      ctx.db
+        .query("kids")
         .withIndex("by_active", (q) => q.eq("active", true))
         .collect(),
       ctx.db
@@ -129,9 +140,14 @@ export const rosterForDate = query({
 
     const presentSet = new Set(todays.filter((r) => r.present).map((r) => r.memberId));
 
+    const all = [
+      ...members.map((m) => ({ ...m, type: "member" as const })),
+      ...kids.map((k) => ({ ...k, type: "kid" as const })),
+    ];
+
     // For last attendance per member, query per member (acceptable for current scale)
     const withLast = await Promise.all(
-      members.map(async (m) => {
+      all.map(async (m) => {
         const last = await ctx.db
           .query("attendance")
           .withIndex("by_member_date", (q) => q.eq("memberId", m._id))
@@ -143,9 +159,10 @@ export const rosterForDate = query({
           name: m.name,
           contact: m.contact,
           residence: m.residence,
-          gender: m.gender,
-          department: (m as any).department,
-          status: (m as any).status,
+          gender: m.type === "member" ? m.gender : null,
+          department: m.type === "member" ? (m as any).department : null,
+          status: m.type === "member" ? (m as any).status : null,
+          type: m.type,
           presentToday: presentSet.has(m._id),
           lastAttendance: mostRecent
             ? { date: mostRecent.date, present: mostRecent.present }

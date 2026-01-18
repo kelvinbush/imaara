@@ -22,8 +22,18 @@ export default defineSchema({
     .index("by_name", ["name"]) 
     .index("by_contact", ["contact"]) 
     .index("by_active", ["active"]),
+  kids: defineTable({
+    name: v.string(),
+    contact: v.union(v.string(), v.null()),
+    residence: v.union(v.string(), v.null()),
+    active: v.boolean(),
+    createdBy: v.string(),
+  })
+    .index("by_name", ["name"])
+    .index("by_contact", ["contact"])
+    .index("by_active", ["active"]),
   attendance: defineTable({
-    memberId: v.id("members"),
+    memberId: v.union(v.id("members"), v.id("kids")),
     date: v.string(),
     present: v.boolean(),
     markedBy: v.string(),

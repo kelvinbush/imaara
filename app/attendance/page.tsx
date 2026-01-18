@@ -6,6 +6,8 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import QuickAddMember from "@/components/QuickAddMember";
 import MemberEditor, { MemberSummary } from "@/components/MemberEditor";
+import QuickAddKid from "@/components/QuickAddKid";
+import KidEditor, { KidSummary } from "@/components/KidEditor";
 import { formatDate, formatIsoDate } from "@/lib/date";
 
 function toISODate(d: Date) {
@@ -18,9 +20,11 @@ function toISODate(d: Date) {
 export default function AttendancePage() {
   const { isAuthenticated } = useConvexAuth();
   const todayIso = toISODate(new Date());
-  const [tab, setTab] = useState<"all" | "male" | "female">("all");
+  const [tab, setTab] = useState<"all" | "male" | "female" | "kids">("all");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<MemberSummary | null>(null);
+  const [kidEditorOpen, setKidEditorOpen] = useState(false);
+  const [editingKid, setEditingKid] = useState<KidSummary | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -47,6 +51,7 @@ export default function AttendancePage() {
 
   const filtered = useMemo(() => {
     if (tab === "all") return members;
+    if (tab === "kids") return members.filter((m) => (m as any).type === "kid");
     return members.filter((m) => (m.gender ?? "").toLowerCase() === tab);
   }, [members, tab]);
 
@@ -118,6 +123,7 @@ export default function AttendancePage() {
             dateIso={todayIso}
             total={members.length}
             present={presentTodayCount}
+            tab={tab}
           />
 
           {/* Gender Tabs */}
@@ -127,6 +133,7 @@ export default function AttendancePage() {
                 { key: "all", label: "All" },
                 { key: "male", label: "Male" },
                 { key: "female", label: "Female" },
+                { key: "kids", label: "Kids" },
               ] as const).map((t) => (
                 <button
                   key={t.key}
@@ -249,16 +256,13 @@ export default function AttendancePage() {
                         <button
                           className="w-full px-3 py-2 rounded-full text-sm font-light bg-white/70 text-zinc-900 hover:bg-white"
                           onClick={() => {
-                            setEditingMember({
-                              memberId: m.memberId as any,
-                              name: m.name,
-                              contact: m.contact ?? null,
-                              residence: m.residence ?? null,
-                              gender: m.gender ?? null,
-                              department: (m as any).department ?? null,
-                              status: (m as any).status ?? null,
-                            });
-                            setEditorOpen(true);
+                            if ((m as any).type === 'kid') {
+                              setEditingKid(m as any);
+                              setKidEditorOpen(true);
+                            } else {
+                              setEditingMember(m as any);
+                              setEditorOpen(true);
+                            }
                           }}
                         >
                           Edit
@@ -326,16 +330,13 @@ export default function AttendancePage() {
                               <button
                                 className="ml-2 px-3 py-2 rounded-full text-sm font-light bg-white/60 text-zinc-900 hover:bg-white cursor-pointer"
                                 onClick={() => {
-                                  setEditingMember({
-                                    memberId: m.memberId as any,
-                                    name: m.name,
-                                    contact: m.contact ?? null,
-                                    residence: m.residence ?? null,
-                                    gender: m.gender ?? null,
-                                    department: (m as any).department ?? null,
-                                    status: (m as any).status ?? null,
-                                  });
-                                  setEditorOpen(true);
+                                  if ((m as any).type === 'kid') {
+                                    setEditingKid(m as any);
+                                    setKidEditorOpen(true);
+                                  } else {
+                                    setEditingMember(m as any);
+                                    setEditorOpen(true);
+                                  }
                                 }}
                               >
                                 Edit
@@ -388,6 +389,14 @@ export default function AttendancePage() {
           onSaved={() => setToast("Member updated")}
         />
       )}
+      {editingKid && (
+        <KidEditor
+          open={kidEditorOpen}
+          onClose={() => setKidEditorOpen(false)}
+          kid={editingKid}
+          onSaved={() => setToast("Kid updated")}
+        />
+      )}
 
       {toast && (
         <div className="fixed top-4 right-4 z-[11000] px-3 py-2 rounded-full bg-emerald-500 text-white text-sm shadow">
@@ -398,7 +407,7 @@ export default function AttendancePage() {
   );
 }
 
-function HighlightsPanel({ dateStr, dateIso, total, present }: { dateStr: string; dateIso: string; total: number; present: number }) {
+function HighlightsPanel({ dateStr, dateIso, total, present, tab }: { dateStr: string; dateIso: string; total: number; present: number; tab: string }) {
   const rate = total > 0 ? Math.round((present / total) * 100) : 0;
   const absent = total - present;
   return (
@@ -411,7 +420,7 @@ function HighlightsPanel({ dateStr, dateIso, total, present }: { dateStr: string
           <span className="px-3 py-1.5 rounded-full bg-white/10 text-white/90">Present Today: {present}</span>
         </div>
         <div className="w-full sm:w-auto">
-          <QuickAddMember dateIso={dateIso} />
+          {tab === 'kids' ? <QuickAddKid dateIso={dateIso} /> : <QuickAddMember dateIso={dateIso} />}
         </div>
       </div>
 

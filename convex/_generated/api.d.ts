@@ -9,6 +9,7 @@
  */
 
 import type * as attendance from "../attendance.js";
+import type * as kids from "../kids.js";
 import type * as members from "../members.js";
 import type * as myFunctions from "../myFunctions.js";
 
@@ -20,6 +21,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   attendance: typeof attendance;
+  kids: typeof kids;
   members: typeof members;
   myFunctions: typeof myFunctions;
 }>;
