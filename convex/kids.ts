@@ -221,17 +221,6 @@ export const bulkImport = mutation({
       const residence = normalize(residenceRaw);
 
       try {
-        // Duplicate by contact if contact is present
-        if (contact) {
-          const existing = await ctx.db
-            .query('kids')
-            .withIndex('by_contact', (q) => q.eq('contact', contact))
-            .first();
-          if (existing) {
-            skipped++;
-            continue;
-          }
-        }
 
         await ctx.db.insert('kids', {
           name,
